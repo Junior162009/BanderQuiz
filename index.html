@@ -81,17 +81,6 @@
             }
         }
 
-        @keyframes confettiFall {
-            0% {
-                opacity: 1;
-                transform: translateY(-20px) rotate(0deg);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(80vh) rotate(720deg);
-            }
-        }
-
         @keyframes shake {
             0%,
             100% {
@@ -113,6 +102,23 @@
 
         .shake {
             animation: shake 0.4s ease;
+        }
+
+        @keyframes heartBeat {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            30% {
+                transform: scale(1.2);
+            }
+            60% {
+                transform: scale(0.9);
+            }
+        }
+
+        .heart-beat {
+            animation: heartBeat 0.6s ease;
         }
 
         /* ===== portal ===== */
@@ -232,6 +238,16 @@
             letter-spacing: 0.3px;
         }
 
+        .footer .stats-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 0.2rem 0.8rem;
+            border-radius: 30px;
+            margin: 0 0.2rem;
+            font-weight: 600;
+            color: var(--gold);
+        }
+
         /* ===== game header ===== */
         .game-header {
             display: flex;
@@ -292,6 +308,22 @@
             padding: 0.2rem 0.7rem;
         }
 
+        .lives-display {
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            font-size: 1.4rem;
+        }
+
+        .lives-display .heart {
+            transition: all 0.3s;
+        }
+        .lives-display .heart.lost {
+            filter: grayscale(1);
+            opacity: 0.3;
+            transform: scale(0.8);
+        }
+
         .header-actions {
             display: flex;
             gap: 0.4rem;
@@ -345,6 +377,7 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: var(--shadow-card);
             transition: all var(--transition);
+            position: relative;
         }
 
         .flag-container {
@@ -425,7 +458,41 @@
             animation: shake 0.4s ease;
         }
 
-        /* ===== información extra ===== */
+        /* ===== timer ===== */
+        .timer-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            width: 100%;
+            margin-top: 0.2rem;
+        }
+
+        .timer-bar-bg {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .timer-bar-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, var(--gold), var(--accent));
+            border-radius: 10px;
+            transition: width 0.3s linear;
+        }
+
+        .timer-text {
+            font-weight: 700;
+            font-size: 1rem;
+            min-width: 2.2rem;
+            text-align: center;
+            color: var(--gold);
+        }
+
+        /* ===== extra info ===== */
         .extra-info {
             margin-top: 0.6rem;
             padding: 0.8rem 1.2rem;
@@ -467,7 +534,7 @@
             font-weight: 700;
         }
 
-        /* ===== estadísticas de progreso ===== */
+        /* ===== progress stats ===== */
         .progress-stats {
             display: flex;
             justify-content: space-between;
@@ -504,6 +571,64 @@
             border-radius: 30px;
             font-size: 0.85rem;
             white-space: nowrap;
+        }
+
+        /* ===== game over overlay ===== */
+        .game-over-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeSlideUp 0.5s ease;
+        }
+
+        .game-over-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-xl);
+            padding: 2.5rem 2rem;
+            max-width: 420px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8);
+        }
+
+        .game-over-card h2 {
+            font-size: 2.4rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--accent), #ff6b6b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .game-over-card .summary {
+            margin: 1.2rem 0;
+            font-size: 1.1rem;
+            color: var(--muted);
+        }
+
+        .game-over-card .summary span {
+            display: block;
+            margin: 0.3rem 0;
+        }
+
+        .game-over-card .summary .highlight {
+            color: var(--gold);
+            font-weight: 700;
+        }
+
+        .game-over-card .btn {
+            margin: 0.4rem 0.2rem;
+            padding: 0.6rem 1.6rem;
+            font-size: 1rem;
         }
 
         /* ===== confeti canvas ===== */
@@ -559,6 +684,13 @@
             }
             .level-name {
                 font-size: 1.2rem;
+            }
+            .lives-display {
+                font-size: 1.2rem;
+            }
+            .timer-text {
+                font-size: 0.9rem;
+                min-width: 1.8rem;
             }
         }
 
@@ -872,8 +1004,42 @@
         let total = 0;
         let streak = 0;
         let bestStreak = 0;
+        let lives = 3;
+        const MAX_LIVES = 3;
         let locked = false;
-        let extraInfoCache = new Map(); // caché para datos de API
+        let extraInfoCache = new Map();
+        let timerSeconds = 12;
+        let timerInterval = null;
+        let timerRunning = false;
+        let gameActive = false;
+
+        // Estadísticas globales (localStorage)
+        let globalStats = {
+            gamesPlayed: 0,
+            totalCorrect: 0,
+            totalWrong: 0,
+            bestStreak: 0
+        };
+
+        function loadStats() {
+            try {
+                const stored = localStorage.getItem('banderquiz_global_stats');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    globalStats = { ...globalStats, ...parsed };
+                }
+            } catch (_) {}
+        }
+
+        function saveStats() {
+            try {
+                localStorage.setItem('banderquiz_global_stats', JSON.stringify(globalStats));
+            } catch (_) {}
+        }
+
+        loadStats();
+        // Sincronizar bestStreak local con el global
+        if (globalStats.bestStreak > bestStreak) bestStreak = globalStats.bestStreak;
 
         // ============================================================
         //  SONIDOS (Web Audio)
@@ -903,7 +1069,6 @@
         }
 
         function playCorrect() {
-            // Acorde mayor: do, mi, sol
             playTone(523.25, 0.2);
             setTimeout(() => playTone(659.25, 0.2), 120);
             setTimeout(() => playTone(783.99, 0.3), 240);
@@ -912,6 +1077,12 @@
         function playWrong() {
             playTone(200, 0.3, 'sawtooth', 0.15);
             setTimeout(() => playTone(150, 0.4, 'sawtooth', 0.12), 200);
+        }
+
+        function playGameOver() {
+            playTone(300, 0.5, 'sawtooth', 0.15);
+            setTimeout(() => playTone(200, 0.6, 'sawtooth', 0.12), 300);
+            setTimeout(() => playTone(100, 0.8, 'sawtooth', 0.1), 600);
         }
 
         // ============================================================
@@ -966,7 +1137,6 @@
 
         function launchConfetti(count = 120) {
             if (confettiRunning) {
-                // añadir más
                 for (let i = 0; i < count; i++) {
                     confettiPieces.push(new ConfettiPiece());
                 }
@@ -977,6 +1147,7 @@
             for (let i = 0; i < count; i++) {
                 confettiPieces.push(new ConfettiPiece());
             }
+
             function animate() {
                 if (confettiPieces.length === 0) {
                     confettiRunning = false;
@@ -989,6 +1160,16 @@
                 confettiRAF = requestAnimationFrame(animate);
             }
             animate();
+        }
+
+        function stopConfetti() {
+            if (confettiRAF) {
+                cancelAnimationFrame(confettiRAF);
+                confettiRAF = null;
+                confettiRunning = false;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                confettiPieces = [];
+            }
         }
 
         // ============================================================
@@ -1055,11 +1236,120 @@
         }
 
         // ============================================================
+        //  TEMPORIZADOR
+        // ============================================================
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerSeconds = 12;
+            timerRunning = true;
+            updateTimerUI();
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                updateTimerUI();
+                if (timerSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    timerRunning = false;
+                    // Tiempo agotado -> fallo automático
+                    if (!locked && gameActive && currentQuestion) {
+                        handleTimeout();
+                    }
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerRunning = false;
+        }
+
+        function updateTimerUI() {
+            const fill = document.getElementById('timer-fill');
+            const text = document.getElementById('timer-text');
+            if (fill) {
+                const pct = Math.max(0, (timerSeconds / 12) * 100);
+                fill.style.width = pct + '%';
+                // Cambiar color según tiempo
+                if (pct < 25) {
+                    fill.style.background = 'linear-gradient(90deg, #e74c3c, #e94560)';
+                } else if (pct < 50) {
+                    fill.style.background = 'linear-gradient(90deg, #f39c12, #e67e22)';
+                } else {
+                    fill.style.background = 'linear-gradient(90deg, var(--gold), var(--accent))';
+                }
+            }
+            if (text) {
+                text.textContent = timerSeconds + 's';
+                if (timerSeconds <= 3) text.style.color = '#e74c3c';
+                else text.style.color = 'var(--gold)';
+            }
+        }
+
+        // ============================================================
+        //  MANEJAR TIMEOUT (fallo por tiempo)
+        // ============================================================
+        async function handleTimeout() {
+            if (locked || !currentQuestion) return;
+            locked = true;
+            gameActive = false;
+            stopTimer();
+
+            const correct = currentQuestion.correct;
+            total++;
+            streak = 0;
+            lives--;
+            globalStats.totalWrong++;
+
+            // Sonido de fallo
+            playWrong();
+
+            // Mostrar feedback
+            document.querySelectorAll('.answer-btn').forEach(b => {
+                b.disabled = true;
+                if (b.dataset.cca2 === correct.cca2) b.classList.add('correct');
+            });
+
+            // Extra info
+            const info = await fetchCountryInfo(correct.cca2);
+            const extraDiv = document.getElementById('extra-info');
+            if (extraDiv) {
+                extraDiv.innerHTML = `
+                    <span class="badge-wrong">⏰ ¡Tiempo agotado!</span>
+                    <span class="capital">${correct.nameEs}</span>
+                    ${info.capital ? `<span>🏛️ ${info.capital}</span>` : ''}
+                    ${info.region ? `<span class="region">🌍 ${info.region}</span>` : ''}
+                `;
+            }
+
+            const msgDiv = document.getElementById('motivational-msg');
+            if (msgDiv) msgDiv.textContent = '⏰ ¡Más rápido la próxima!';
+
+            updateStatsUI();
+            updateLivesUI();
+
+            // Comprobar game over
+            if (lives <= 0) {
+                await new Promise(r => setTimeout(r, 800));
+                showGameOver();
+                return;
+            }
+
+            // Siguiente pregunta
+            setTimeout(() => {
+                locked = false;
+                gameActive = true;
+                currentQuestion = genQuestion();
+                renderGame();
+            }, 1500);
+        }
+
+        // ============================================================
         //  MANEJAR RESPUESTA
         // ============================================================
         async function handleAnswer(cca2, btn) {
-            if (locked || !currentQuestion) return;
+            if (locked || !currentQuestion || !gameActive) return;
             locked = true;
+            gameActive = false;
+            stopTimer();
             const correct = currentQuestion.correct;
             const isCorrect = cca2 === correct.cca2;
 
@@ -1067,33 +1357,34 @@
             if (isCorrect) {
                 score++;
                 streak++;
+                globalStats.totalCorrect++;
                 if (streak > bestStreak) {
                     bestStreak = streak;
+                    globalStats.bestStreak = bestStreak;
                     localStorage.setItem('banderquiz_bestStreak', String(bestStreak));
                 }
                 playCorrect();
                 launchConfetti(80);
             } else {
                 streak = 0;
+                lives--;
+                globalStats.totalWrong++;
                 playWrong();
             }
 
-            // Actualizar UI inmediatamente
+            // Actualizar UI
             updateStatsUI();
+            updateLivesUI();
 
-            // Mostrar feedback en botones
+            // Feedback en botones
             document.querySelectorAll('.answer-btn').forEach(b => {
                 b.disabled = true;
                 if (b.dataset.cca2 === correct.cca2) b.classList.add('correct');
                 if (b === btn && !isCorrect) b.classList.add('wrong');
             });
 
-            // Obtener info adicional
+            // Extra info
             const info = await fetchCountryInfo(correct.cca2);
-            const regionName = info.region || '';
-            const capitalName = info.capital || '';
-
-            // Mostrar extra-info
             const extraDiv = document.getElementById('extra-info');
             if (extraDiv) {
                 const emoji = isCorrect ? '✅' : '❌';
@@ -1101,26 +1392,31 @@
                 extraDiv.innerHTML = `
                     <span class="${badge}">${emoji} ${isCorrect ? '¡Correcto!' : '¡Incorrecto!'}</span>
                     <span class="capital">${correct.nameEs}</span>
-                    ${capitalName ? `<span>🏛️ ${capitalName}</span>` : ''}
-                    ${regionName ? `<span class="region">🌍 ${regionName}</span>` : ''}
+                    ${info.capital ? `<span>🏛️ ${info.capital}</span>` : ''}
+                    ${info.region ? `<span class="region">🌍 ${info.region}</span>` : ''}
                 `;
             }
 
-            // Mensaje motivacional
             const msgDiv = document.getElementById('motivational-msg');
-            if (msgDiv) {
-                msgDiv.textContent = getMotivation(streak);
+            if (msgDiv) msgDiv.textContent = getMotivation(streak);
+
+            // Comprobar game over
+            if (lives <= 0) {
+                await new Promise(r => setTimeout(r, 800));
+                showGameOver();
+                return;
             }
 
             setTimeout(() => {
                 locked = false;
+                gameActive = true;
                 currentQuestion = genQuestion();
                 renderGame();
             }, 1500);
         }
 
         // ============================================================
-        //  ACTUALIZAR ESTADÍSTICAS UI
+        //  ACTUALIZAR UI
         // ============================================================
         function updateStatsUI() {
             const corrEl = document.getElementById('corr');
@@ -1144,19 +1440,37 @@
             }
         }
 
+        function updateLivesUI() {
+            const container = document.getElementById('lives-container');
+            if (!container) return;
+            let html = '';
+            for (let i = 0; i < MAX_LIVES; i++) {
+                const lost = i >= lives ? 'lost' : '';
+                html += `<span class="heart ${lost}">❤️</span>`;
+            }
+            container.innerHTML = html;
+            if (lives < MAX_LIVES) {
+                // animación de latido al perder vida
+                container.querySelectorAll('.heart:not(.lost)').forEach(el => {
+                    el.classList.add('heart-beat');
+                    setTimeout(() => el.classList.remove('heart-beat'), 600);
+                });
+            }
+        }
+
         // ============================================================
         //  RENDERIZAR JUEGO
         // ============================================================
         function renderGame() {
             if (!currentQuestion) {
-                // Si no hay pregunta, volver al portal
                 showPortal();
                 return;
             }
-            const { correct, options } = currentQuestion;
 
             const bestFromStorage = parseInt(localStorage.getItem('banderquiz_bestStreak')) || 0;
             if (bestStreak < bestFromStorage) bestStreak = bestFromStorage;
+
+            const { correct, options } = currentQuestion;
 
             app.innerHTML = `
                 <div class="game-header">
@@ -1178,12 +1492,21 @@
                 </div>
 
                 <div class="game-card">
+                    <div class="lives-display" id="lives-container">
+                        ${Array.from({length: MAX_LIVES}, (_, i) => `<span class="heart ${i >= lives ? 'lost' : ''}">❤️</span>`).join('')}
+                    </div>
                     <div class="flag-container">
                         <span class="flag-emoji">${correct.flag}</span>
                     </div>
                     <div class="question-prompt">¿A qué país pertenece?</div>
                     <div class="answers-grid">
                         ${options.map(o => `<button class="answer-btn" data-cca2="${o.cca2}">${o.nameEs}</button>`).join('')}
+                    </div>
+                    <div class="timer-container">
+                        <div class="timer-bar-bg">
+                            <div class="timer-bar-fill" id="timer-fill" style="width:100%"></div>
+                        </div>
+                        <span class="timer-text" id="timer-text">12s</span>
                     </div>
                     <div id="extra-info" class="extra-info">🌍 Haz tu elección</div>
                     <div class="progress-stats">
@@ -1206,17 +1529,86 @@
                     total = 0;
                     streak = 0;
                     bestStreak = 0;
+                    lives = MAX_LIVES;
+                    globalStats = { gamesPlayed: 0, totalCorrect: 0, totalWrong: 0, bestStreak: 0 };
                     localStorage.removeItem('banderquiz_bestStreak');
+                    saveStats();
                     currentQuestion = genQuestion();
                     renderGame();
                 }
             });
 
             document.getElementById('backBtn').addEventListener('click', () => {
+                stopTimer();
+                gameActive = false;
+                locked = false;
                 showPortal();
             });
 
             updateStatsUI();
+            updateLivesUI();
+
+            // Iniciar timer
+            gameActive = true;
+            startTimer();
+        }
+
+        // ============================================================
+        //  GAME OVER
+        // ============================================================
+        function showGameOver() {
+            stopTimer();
+            gameActive = false;
+            locked = true;
+            playGameOver();
+            stopConfetti();
+
+            // Guardar estadísticas globales
+            globalStats.gamesPlayed++;
+            saveStats();
+
+            const totalQuestions = total;
+            const correctAnswers = score;
+            const accuracy = totalQuestions === 0 ? 0 : Math.round((correctAnswers / totalQuestions) * 100);
+
+            // Overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'game-over-overlay';
+            overlay.id = 'game-over-overlay';
+            overlay.innerHTML = `
+                <div class="game-over-card">
+                    <h2>💀 Game Over</h2>
+                    <div class="summary">
+                        <span>📊 <span class="highlight">${correctAnswers}</span> aciertos de <span class="highlight">${totalQuestions}</span></span>
+                        <span>🎯 Precisión: <span class="highlight">${accuracy}%</span></span>
+                        <span>🔥 Mejor racha: <span class="highlight">${bestStreak}</span></span>
+                        <span>❤️ Vidas perdidas: <span class="highlight">${MAX_LIVES - lives}</span></span>
+                    </div>
+                    <div>
+                        <button class="btn" id="go-retry">🔄 Reintentar</button>
+                        <button class="btn" id="go-menu">🏠 Menú</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+
+            document.getElementById('go-retry').addEventListener('click', () => {
+                document.getElementById('game-over-overlay').remove();
+                // Reiniciar con mismo nivel
+                lives = MAX_LIVES;
+                score = 0;
+                total = 0;
+                streak = 0;
+                locked = false;
+                gameActive = true;
+                currentQuestion = genQuestion();
+                renderGame();
+            });
+
+            document.getElementById('go-menu').addEventListener('click', () => {
+                document.getElementById('game-over-overlay').remove();
+                showPortal();
+            });
         }
 
         // ============================================================
@@ -1227,10 +1619,19 @@
             score = 0;
             total = 0;
             streak = 0;
+            lives = MAX_LIVES;
             const stored = parseInt(localStorage.getItem('banderquiz_bestStreak')) || 0;
             bestStreak = stored;
+            if (globalStats.bestStreak > bestStreak) bestStreak = globalStats.bestStreak;
             setFiltered();
             currentQuestion = genQuestion();
+            if (!currentQuestion) {
+                alert('No hay suficientes países para este nivel. Intenta otro.');
+                showPortal();
+                return;
+            }
+            gameActive = true;
+            locked = false;
             renderGame();
         }
 
@@ -1238,14 +1639,12 @@
         //  PORTAL (MENÚ PRINCIPAL)
         // ============================================================
         function showPortal() {
-            // Si hay confeti corriendo, lo detenemos
-            if (confettiRAF) {
-                cancelAnimationFrame(confettiRAF);
-                confettiRAF = null;
-                confettiRunning = false;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                confettiPieces = [];
-            }
+            stopTimer();
+            stopConfetti();
+            gameActive = false;
+            locked = false;
+            // Recargar stats globales
+            loadStats();
 
             app.innerHTML = `
                 <div class="portal">
@@ -1271,38 +1670,28 @@
                             <span class="level-desc">Asia y Oceanía</span>
                         </button>
                     </div>
-                    <p class="footer">🎌 pon a prueba tu mirada · aprende jugando</p>
+                    <p class="footer">
+                        🎌 pon a prueba tu mirada · aprende jugando
+                        <br>
+                        <span class="stats-badge">🏆 mejor racha: ${globalStats.bestStreak}</span>
+                        <span class="stats-badge">🎮 partidas: ${globalStats.gamesPlayed}</span>
+                        <span class="stats-badge">✅ aciertos: ${globalStats.totalCorrect}</span>
+                        <span class="stats-badge">❌ fallos: ${globalStats.totalWrong}</span>
+                    </p>
                 </div>
             `;
 
             document.querySelectorAll('.level-card').forEach(c => {
                 c.addEventListener('click', () => startGame(c.dataset.level));
             });
-
-            // Restaurar mejor racha del localStorage para mostrarla en algún lugar (opcional)
-            const stored = parseInt(localStorage.getItem('banderquiz_bestStreak')) || 0;
-            if (stored > 0) {
-                // Mostrar un pequeño badge en el footer
-                const footer = document.querySelector('.footer');
-                if (footer) {
-                    footer.textContent += ` · 🏆 mejor racha: ${stored}`;
-                }
-            }
         }
 
         // ============================================================
         //  INICIO
         // ============================================================
-        // Cargar mejor racha guardada
-        const storedBest = parseInt(localStorage.getItem('banderquiz_bestStreak')) || 0;
-        bestStreak = storedBest;
-
         showPortal();
 
-        // ============================================================
-        //  MANEJO DE ERRORES GLOBALES (para la API)
-        // ============================================================
-        console.log('Banderquiz mejorado · disfruta del juego 🎉');
+        console.log('🎉 Banderquiz mejorado · con vidas, temporizador y estadísticas globales');
     </script>
 </body>
 </html>
